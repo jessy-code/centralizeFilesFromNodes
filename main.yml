@@ -1,0 +1,33 @@
+---
+- name: Save files from the [source] inventory to the [target] inventory given in the inventory file.
+  gather_facts: false
+  hosts: source
+
+  tasks:
+    - assert:
+        that:
+          - "destination is defined"
+          - "temporary_folder is defined"
+          - "source is defined"
+        fail_msg:
+          "'source', 'destination' and 'temporary_folder' must be defined"
+
+    - name: Get files from source servers
+      synchronize:
+        dest: "{{ temporary_folder }}"
+        src: "{{ source }}"
+        mode: pull
+
+- hosts: target
+  tasks:
+    - name: Set foldername
+      set_fact:
+        foldername: "{{ ansible_date_time.year + ansible_date_time.month + ansible_date_time.day }}"
+      when: "dat is not defined"
+
+    - name: Copy result to target in a folder 'YYYYMMDD'
+      copy:
+        dest: "{{ destination + '/' + foldername }}"
+        src: "{{temporary_folder}}"
+        directory_mode: "0666"
+        mode: "0666"
